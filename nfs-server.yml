@@ -1,0 +1,56 @@
+---
+- hosts: nfs-server
+  become: yes
+  tasks:
+  - name: Create mountable dir
+    file: path=/share state=directory mode=777 owner=root group=root
+
+  - name: Ensure directories to export exist
+    file:  # noqa 208
+      path: "{{ item.strip().split()[0] }}"
+      state: directory
+    with_items:
+      - /var/nfs/general
+
+  - name: make sure the mount drive has a filesystem
+    # filesystem: fstype=ext4 dev={{ mountable_share_drive | default('/dev/xvdb') }}
+    filesystem: fstype=ext4 dev=/var/nfs/general
+
+  - name: set mountpoints
+    # mount: name=/share src={{ mountable_share_drive | default('/dev/xvdb') }} fstype=auto opts=defaults,nobootwait dump=0 passno=2 state=mounted
+    mount: name=/share src=/var/nfs/general fstype=auto opts=defaults,nobootwait dump=0 passno=2 state=mounted
+
+  # - name: Ensure NFS utilities are installed.
+  #   apt: name={{ item }} state=present update_cache=yes
+  #   with_items:
+  #     - nfs-common
+  #     - nfs-kernel-server
+
+  - name: Ensure NFS utilities are installed.
+    apt:
+      name:
+        - nfs-common
+        - nfs-kernel-server
+      state: present
+
+
+
+
+  - name: copy /etc/exports
+    template: src=exports.j2 dest=/etc/exports owner=root group=root
+
+  - name: Copy exports file.
+    template:
+      src: exports.j2
+      dest: /etc/exports
+      owner: root
+      group: root
+      mode: 0644
+    notify: reload nfs
+
+  # - name: restart nfs server
+  #   service: name=nfs-kernel-server state=restarted
+
+  # - name: Ensure nfs is running.
+  #   service: "name=nfs-kernel-server state=started enabled=yes"
+    # when: nfs_exports|length

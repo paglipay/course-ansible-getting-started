@@ -1,0 +1,6 @@
+---
+- hosts: ub
+  become: true
+  become_user: root
+  roles:
+  - docker

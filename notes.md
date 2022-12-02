@@ -1,0 +1,1 @@
+ansible-playbook -i ansible/hosts nfs-server.yml --private-key=~/.ssh/id_rsa -u ubuntu
